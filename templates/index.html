@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Text to Speech Converter</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: var(--bg-color, #f0f2f5);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        transition: background-color 0.3s ease;
+      }
+
+      .card {
+        background-color: var(--card-bg, white);
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 500px;
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: var(--text-color, #333);
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: var(--text-color, #555);
+        text-align: left;
+      }
+
+      textarea,
+      input[type="file"],
+      select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid var(--input-border, #ccc);
+        border-radius: 5px;
+        font-size: 14px;
+        background-color: var(--input-bg, white);
+        color: var(--input-text-color, #000);
+      }
+
+      textarea {
+        resize: none;
+      }
+
+      input[type="submit"] {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      input[type="submit"]:hover {
+        background-color: #45a049;
+      }
+
+      .form-group {
+        text-align: left;
+      }
+
+      #output {
+        margin-top: 20px;
+      }
+
+      #outputText {
+        margin-bottom: 20px;
+        font-size: 16px;
+        color: var(--text-color, #333);
+      }
+
+      audio {
+        width: 100%;
+      }
+
+      .theme-toggle {
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text-color, #555);
+        margin-bottom: 20px;
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Text to Speech Converter</h1>
+      <div class="theme-toggle">
+        <label> <input type="checkbox" id="themeToggle" /> Dark Mode </label>
+      </div>
+      <form id="ttsForm">
+        <div class="form-group">
+          <label for="text">Enter text:</label>
+          <textarea id="text" name="text" rows="4" cols="50"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="file">Or upload a file (PDF, DOCX, TXT):</label>
+          <input type="file" id="file" name="file" />
+        </div>
+
+        <div class="form-group">
+          <label for="voice">Select Voice:</label>
+          <select id="voice" name="voice">
+            {% for name in tts_models.keys() %}
+            <option value="{{ name }}">{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="vocoder">Select Vocoder:</label>
+          <select id="vocoder" name="vocoder">
+            {% for name in vocoder_models.keys() %}
+            <option value="{{ name }}">{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <input type="submit" value="Convert to Speech" />
+      </form>
+
+      <div id="output">
+        <div id="outputText"></div>
+        <audio id="audioPlayer" controls></audio>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("ttsForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          var formData = new FormData(this);
+
+          fetch("/convert", {
+            method: "POST",
+            body: formData,
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.error) {
+                alert(data.error);
+              } else {
+                // Display the input text
+                document.getElementById("outputText").textContent = data.text;
+
+                // Play the generated audio
+                var audioPlayer = document.getElementById("audioPlayer");
+                audioPlayer.src = "data:audio/wav;base64," + data.audio;
+                audioPlayer.play();
+              }
+            })
+            .catch((error) => console.error("Error:", error));
+        });
+
+      document
+        .getElementById("themeToggle")
+        .addEventListener("change", function () {
+          if (this.checked) {
+            document.body.style.setProperty("--bg-color", "#333");
+            document.body.style.setProperty("--card-bg", "#444");
+            document.body.style.setProperty("--text-color", "#f0f0f0");
+            document.body.style.setProperty("--input-border", "#555");
+            document.body.style.setProperty("--input-bg", "#666");
+            document.body.style.setProperty("--input-text-color", "#fff");
+          } else {
+            document.body.style.removeProperty("--bg-color");
+            document.body.style.removeProperty("--card-bg");
+            document.body.style.removeProperty("--text-color");
+            document.body.style.removeProperty("--input-border");
+            document.body.style.removeProperty("--input-bg");
+            document.body.style.removeProperty("--input-text-color");
+          }
+        });
+    </script>
+  </body>
+</html>
